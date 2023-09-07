@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "gocsvrepo"
+version = "0.1.0"
+description = "A python tool for finding go repositories in GitHub"
+authors = ["JulianBenitez <julian.benitez@mail.escuelaing.edu.co>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
