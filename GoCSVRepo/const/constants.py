@@ -1,0 +1,2 @@
+GITHUB_ACCESS_TOKEN = 'GITHUB_ACCESS_TOKEN'
+GO_MOD_REGEX = r'go\s(\d+\.\d+(\.\d+)?)'
