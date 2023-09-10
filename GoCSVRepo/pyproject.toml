@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "gocsvrepo"
+name = "main"
 version = "0.1.0"
 description = "A python tool for finding go repositories in GitHub"
 authors = ["JulianBenitez <julian.benitez@mail.escuelaing.edu.co>"]
