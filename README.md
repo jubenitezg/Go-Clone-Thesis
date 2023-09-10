@@ -25,3 +25,8 @@ Total Go repositories on GitHub: `1,332,711`
 
 * Julián Benítez Gutiérrez - [julian.benitez@mail.escuelaing.edu.co](mailto:julian.benitez@mail.escuelaing.edu.co)
 
+## Director
+* Héctor Fabio Cadavid Rengifo
+
+## Co-director
+* Wilmer Edicson Garzón Alfonso
