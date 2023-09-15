@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"go/ast"
 	"reflect"
 )
@@ -20,7 +21,7 @@ func (a *AstNode) Type() string {
 		tp = t.Name()
 	}
 	if op, ok := getOperator(a.Node); ok {
-		tp += ":" + op
+		tp = fmt.Sprintf("%s:%s", tp, op)
 	}
 
 	return tp
