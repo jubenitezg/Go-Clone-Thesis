@@ -8,6 +8,7 @@ import (
 	"go/parser"
 	"go/token"
 	"reflect"
+	"slices"
 	"strings"
 )
 
@@ -32,7 +33,89 @@ func New(file string) (*Extractor, error) {
 	return ex, nil
 }
 
-func (e *Extractor) GeneratePathForFunctions() {
+func getTreeStack(funcDecl *ast.FuncDecl, node *ast.Node) []ast.Node {
+	var tmpStack []ast.Node
+	var stack []ast.Node
+	ast.Inspect(funcDecl, func(n ast.Node) bool {
+		if n == *node {
+			stack = make([]ast.Node, len(tmpStack))
+			copy(stack, tmpStack)
+			return false
+		}
+		if n == nil {
+			tmpStack = tmpStack[:len(tmpStack)-1]
+		} else {
+			tmpStack = append(tmpStack, n)
+		}
+		return true
+	})
+	stack = append(stack, *node)
+	slices.Reverse(stack)
+
+	return stack
+}
+
+func generatePathCompare(funcDecl *ast.FuncDecl, source *ast.Node, target *ast.Node) string {
+	sourceTreeStack := getTreeStack(funcDecl, source)
+	targetTreeStack := getTreeStack(funcDecl, target)
+	var pathBuilder strings.Builder
+	commonPrefix := 0
+	currentSourceAncestor := len(sourceTreeStack) - 1
+	currentTargetAncestor := len(targetTreeStack) - 1
+	for currentSourceAncestor >= 0 && currentTargetAncestor >= 0 &&
+		sourceTreeStack[currentSourceAncestor] == targetTreeStack[currentTargetAncestor] {
+		commonPrefix++
+		currentSourceAncestor--
+		currentTargetAncestor--
+	}
+
+	for i := 0; i < len(sourceTreeStack)-commonPrefix; i++ {
+		current := sourceTreeStack[i]
+		pathBuilder.WriteString(fmt.Sprintf("%s%s%s%s", constant.Start, getType(current), constant.End, constant.Up))
+	}
+
+	common := sourceTreeStack[len(sourceTreeStack)-commonPrefix]
+	pathBuilder.WriteString(fmt.Sprintf("%s%s%s", constant.Start, getType(common), constant.End))
+
+	for i := len(targetTreeStack) - commonPrefix - 1; i >= 0; i-- {
+		current := targetTreeStack[i]
+		pathBuilder.WriteString(fmt.Sprintf("%s%s%s%s", constant.Down, constant.Start, getType(current), constant.End))
+	}
+	return pathBuilder.String()
+}
+
+func (e *Extractor) GeneratePathForFunctionsCompare() []string {
+	var paths []string
+	for _, funcDecl := range e.Functions {
+		leaves := extractLeavesFromFunc(funcDecl)
+		for i := 0; i < len(leaves)-1; i++ {
+			for j := i + 1; j < len(leaves); j++ {
+				path := generatePathCompare(funcDecl, &leaves[i].Node, &leaves[j].Node)
+				li := ""
+				switch leaves[i].Node.(type) {
+				case *ast.Ident:
+					li = leaves[i].Node.(*ast.Ident).Name
+				case *ast.BasicLit:
+					li = leaves[i].Node.(*ast.BasicLit).Value
+				}
+				lj := ""
+				switch leaves[j].Node.(type) {
+				case *ast.Ident:
+					lj = leaves[j].Node.(*ast.Ident).Name
+				case *ast.BasicLit:
+					lj = leaves[j].Node.(*ast.BasicLit).Value
+				}
+				//fmt.Println(fmt.Sprintf("%s,%s,%s", li, path, lj))
+				paths = append(paths, fmt.Sprintf("%s,%s,%s", li, path, lj))
+			}
+		}
+	}
+
+	return paths
+}
+
+func (e *Extractor) GeneratePathForFunctions() []string {
+	var paths []string
 	for _, funcDecl := range e.Functions {
 		leaves := extractLeavesFromFunc(funcDecl)
 		for i := 0; i < len(leaves)-1; i++ {
@@ -52,10 +135,12 @@ func (e *Extractor) GeneratePathForFunctions() {
 				case *ast.BasicLit:
 					lj = leaves[j].Node.(*ast.BasicLit).Value
 				}
-				fmt.Println(fmt.Sprintf("%s,%s,%s", li, path, lj))
+				//fmt.Println(fmt.Sprintf("%s,%s,%s", li, path, lj))
+				paths = append(paths, fmt.Sprintf("%s,%s,%s", li, path, lj))
 			}
 		}
 	}
+	return paths
 }
 
 func extractFunctions(parsedAst *ast.File) []*ast.FuncDecl {
