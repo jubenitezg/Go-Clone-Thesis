@@ -105,7 +105,6 @@ func (e *Extractor) GeneratePathForFunctionsCompare() []string {
 				case *ast.BasicLit:
 					lj = leaves[j].Node.(*ast.BasicLit).Value
 				}
-				//fmt.Println(fmt.Sprintf("%s,%s,%s", li, path, lj))
 				paths = append(paths, fmt.Sprintf("%s,%s,%s", li, path, lj))
 			}
 		}
@@ -120,23 +119,8 @@ func (e *Extractor) GeneratePathForFunctions() []string {
 		leaves := extractLeavesFromFunc(funcDecl)
 		for i := 0; i < len(leaves)-1; i++ {
 			for j := i + 1; j < len(leaves); j++ {
-				path := generatePath(leaves[i], leaves[j])
-				li := ""
-				switch leaves[i].Node.(type) {
-				case *ast.Ident:
-					li = leaves[i].Node.(*ast.Ident).Name
-				case *ast.BasicLit:
-					li = leaves[i].Node.(*ast.BasicLit).Value
-				}
-				lj := ""
-				switch leaves[j].Node.(type) {
-				case *ast.Ident:
-					lj = leaves[j].Node.(*ast.Ident).Name
-				case *ast.BasicLit:
-					lj = leaves[j].Node.(*ast.BasicLit).Value
-				}
-				//fmt.Println(fmt.Sprintf("%s,%s,%s", li, path, lj))
-				paths = append(paths, fmt.Sprintf("%s,%s,%s", li, path, lj))
+				path := generatePath(&leaves[i], &leaves[j])
+				paths = append(paths, fmt.Sprintf("%s,%s,%s", leaves[i].String(), path, leaves[j].String()))
 			}
 		}
 	}
@@ -161,14 +145,19 @@ func extractLeavesFromFunc(funcDecl *ast.FuncDecl) []common.AstNode {
 	ast.Inspect(funcDecl, func(node ast.Node) bool {
 		switch node.(type) {
 		case *ast.Ident, *ast.BasicLit:
-			path := make([]ast.Node, len(stack))
-			copy(path, stack)
-			path = append(path, node)
+			path := make([]common.AstNode, len(stack))
+			for i, n := range stack {
+				path[i] = common.AstNode{
+					Node: n,
+					Leaf: false,
+				}
+			}
 			leaf := common.AstNode{
 				Node: node,
-				Path: path,
 				Leaf: true,
 			}
+			path = append(path, leaf)
+			leaf.Path = path
 			leafNodes = append(leafNodes, leaf)
 		}
 		if node == nil {
@@ -182,20 +171,20 @@ func extractLeavesFromFunc(funcDecl *ast.FuncDecl) []common.AstNode {
 	return leafNodes
 }
 
-func generatePath(source common.AstNode, target common.AstNode) string {
+func generatePath(source *common.AstNode, target *common.AstNode) string {
 	var pathSb strings.Builder
 	ancestorIdx := 0
 	maxAncestorIdx := min(len(source.Path), len(target.Path))
-	for ancestorIdx < maxAncestorIdx && source.Path[ancestorIdx] == target.Path[ancestorIdx] {
+	for ancestorIdx < maxAncestorIdx && source.Path[ancestorIdx].Node == target.Path[ancestorIdx].Node {
 		ancestorIdx++
 	}
 	firstAncestor := source.Path[ancestorIdx-1]
 	for j := len(source.Path) - 1; j >= ancestorIdx; j-- {
-		pathSb.WriteString(fmt.Sprintf("%s%s%s%s", constant.Start, getType(source.Path[j]), constant.End, constant.Up))
+		pathSb.WriteString(fmt.Sprintf("%s%s%s%s", constant.Start, source.Path[j].Type(), constant.End, constant.Up))
 	}
-	pathSb.WriteString(fmt.Sprintf("%s%s%s", constant.Start, getType(firstAncestor), constant.End))
+	pathSb.WriteString(fmt.Sprintf("%s%s%s", constant.Start, firstAncestor.Type(), constant.End))
 	for j := ancestorIdx; j < len(target.Path); j++ {
-		pathSb.WriteString(fmt.Sprintf("%s%s%s%s", constant.Down, constant.Start, getType(target.Path[j]), constant.End))
+		pathSb.WriteString(fmt.Sprintf("%s%s%s%s", constant.Down, constant.Start, target.Path[j].Type(), constant.End))
 	}
 
 	return pathSb.String()
