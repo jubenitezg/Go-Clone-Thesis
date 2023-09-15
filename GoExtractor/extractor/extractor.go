@@ -13,48 +13,49 @@ import (
 type Extractor struct {
 	parsedAst *ast.File
 	fSet      *token.FileSet
-	Leaves    []common.AstNode
 	Functions []*ast.FuncDecl
 }
 
 func New(file string) (*Extractor, error) {
 	fs := token.NewFileSet()
-	node, err := parser.ParseFile(fs, file, nil, 0)
+	parsedAst, err := parser.ParseFile(fs, file, nil, 0)
 	if err != nil {
 		return nil, err
 	}
-	return &Extractor{
-		parsedAst: node,
+	functions := extractFunctions(parsedAst)
+	ex := &Extractor{
+		parsedAst: parsedAst,
 		fSet:      fs,
-	}, nil
-}
-
-func (e *Extractor) ExtractFunctions() []*ast.FuncDecl {
-	var funcDecls []*ast.FuncDecl
-	ast.Inspect(e.parsedAst, func(node ast.Node) bool {
-		if funcDecl, ok := node.(*ast.FuncDecl); ok {
-			funcDecls = append(funcDecls, funcDecl)
-		}
-		return true
-	})
-	e.Functions = funcDecls
-
-	return funcDecls
+		Functions: functions,
+	}
+	return ex, nil
 }
 
 func (e *Extractor) GeneratePathForFunctions() {
 	for _, funcDecl := range e.Functions {
-		e.ExtractLeavesFromFunc(funcDecl)
-		for i := 0; i < len(e.Leaves)-1; i++ {
-			for j := i + 1; j < len(e.Leaves); j++ {
-				path := e.GeneratePath(e.Leaves[i], e.Leaves[j])
+		leaves := extractLeavesFromFunc(funcDecl)
+		for i := 0; i < len(leaves)-1; i++ {
+			for j := i + 1; j < len(leaves); j++ {
+				path := generatePath(leaves[i], leaves[j])
 				fmt.Println(path)
 			}
 		}
 	}
 }
 
-func (e *Extractor) ExtractLeavesFromFunc(funcDecl *ast.FuncDecl) []common.AstNode {
+func extractFunctions(parsedAst *ast.File) []*ast.FuncDecl {
+	var funcDecls []*ast.FuncDecl
+	ast.Inspect(parsedAst, func(node ast.Node) bool {
+		if funcDecl, ok := node.(*ast.FuncDecl); ok {
+			funcDecls = append(funcDecls, funcDecl)
+		}
+		return true
+	})
+
+	return funcDecls
+}
+
+func extractLeavesFromFunc(funcDecl *ast.FuncDecl) []common.AstNode {
 	var leafNodes []common.AstNode
 	var stack []ast.Node
 	ast.Inspect(funcDecl, func(node ast.Node) bool {
@@ -77,12 +78,11 @@ func (e *Extractor) ExtractLeavesFromFunc(funcDecl *ast.FuncDecl) []common.AstNo
 		}
 		return true
 	})
-	e.Leaves = leafNodes
 
 	return leafNodes
 }
 
-func (e *Extractor) GeneratePath(source common.AstNode, target common.AstNode) string {
+func generatePath(source common.AstNode, target common.AstNode) string {
 	var pathSb strings.Builder
 	ancestorIdx := 0
 	maxAncestorIdx := min(len(source.Path), len(target.Path))
