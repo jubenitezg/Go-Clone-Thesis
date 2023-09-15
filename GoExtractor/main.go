@@ -2,15 +2,13 @@ package main
 
 import (
 	"fmt"
+	"go-extractor/extractor"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"slices"
 	"strings"
 )
-
-const Up = "↑"
-const Down = "↓"
 
 func parseGoFile(filename string) (*ast.File, *token.FileSet, error) {
 	fs := token.NewFileSet()
@@ -86,7 +84,7 @@ func generatePath(funcDecl *ast.FuncDecl, source *ast.Node, target *ast.Node) st
 
 	for i := 0; i < len(sourceTreeStack)-commonPrefix; i++ {
 		current := sourceTreeStack[i]
-		pathBuilder.WriteString(fmt.Sprintf("%T%s", current, Up))
+		pathBuilder.WriteString(fmt.Sprintf("%T%s", current, "^"))
 	}
 
 	common := sourceTreeStack[len(sourceTreeStack)-commonPrefix]
@@ -94,7 +92,7 @@ func generatePath(funcDecl *ast.FuncDecl, source *ast.Node, target *ast.Node) st
 
 	for i := len(targetTreeStack) - commonPrefix - 1; i >= 0; i-- {
 		current := targetTreeStack[i]
-		pathBuilder.WriteString(fmt.Sprintf("%s%T", Down, current))
+		pathBuilder.WriteString(fmt.Sprintf("%s%T", "_", current))
 	}
 	return pathBuilder.String()
 }
@@ -107,18 +105,20 @@ func main() {
 		return
 	}
 
-	//fmt.Println(parsedAST)
-	functions := extractFunctions(parsedAST)
-	leaves := extractLeavesFromFunc(functions[0])
-	fmt.Println(generatePath(functions[0], &leaves[7], &leaves[10]))
-	//for _, function := range extractFunctions(parsedAST, fset) {
-	//	//fmt.Println("Function: ", function.Name.Name)
-	//	leaves := extractLeavesFromFunc(function, fset)
-	//	for i := 0; i < len(leaves); i++ {
-	//		for j := i + 1; j < len(leaves); j++ {
-	//			//fmt.Println(leaves[i].Pos(), leaves[j].Pos())
-	//			//generatePath(leaves[i], leaves[j])
-	//		}
-	//	}
-	//}
+	for _, function := range extractFunctions(parsedAST) {
+		leaves := extractLeavesFromFunc(function)
+		for i := 0; i < len(leaves); i++ {
+			for j := i + 1; j < len(leaves); j++ {
+				fmt.Println(generatePath(function, &leaves[i], &leaves[j]))
+			}
+		}
+	}
+	fmt.Println("=========================================")
+	ex, err := extractor.New(filename)
+	if err != nil {
+		fmt.Println("Error creating extractor:", err)
+		return
+	}
+	ex.ExtractFunctions()
+	ex.GeneratePathForFunctions()
 }
