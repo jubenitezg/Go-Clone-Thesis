@@ -1,6 +1,8 @@
 package common
 
-import "go/ast"
+import (
+	"go/ast"
+)
 
 type AstNode struct {
 	Node ast.Node

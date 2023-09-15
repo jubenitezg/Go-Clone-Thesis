@@ -7,6 +7,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"reflect"
 	"strings"
 )
 
@@ -37,7 +38,21 @@ func (e *Extractor) GeneratePathForFunctions() {
 		for i := 0; i < len(leaves)-1; i++ {
 			for j := i + 1; j < len(leaves); j++ {
 				path := generatePath(leaves[i], leaves[j])
-				fmt.Println(path)
+				li := ""
+				switch leaves[i].Node.(type) {
+				case *ast.Ident:
+					li = leaves[i].Node.(*ast.Ident).Name
+				case *ast.BasicLit:
+					li = leaves[i].Node.(*ast.BasicLit).Value
+				}
+				lj := ""
+				switch leaves[j].Node.(type) {
+				case *ast.Ident:
+					lj = leaves[j].Node.(*ast.Ident).Name
+				case *ast.BasicLit:
+					lj = leaves[j].Node.(*ast.BasicLit).Value
+				}
+				fmt.Println(fmt.Sprintf("%s,%s,%s", li, path, lj))
 			}
 		}
 	}
@@ -60,7 +75,7 @@ func extractLeavesFromFunc(funcDecl *ast.FuncDecl) []common.AstNode {
 	var stack []ast.Node
 	ast.Inspect(funcDecl, func(node ast.Node) bool {
 		switch node.(type) {
-		case *ast.Ident, *ast.BasicLit, *ast.CompositeLit:
+		case *ast.Ident, *ast.BasicLit:
 			path := make([]ast.Node, len(stack))
 			copy(path, stack)
 			path = append(path, node)
@@ -91,12 +106,34 @@ func generatePath(source common.AstNode, target common.AstNode) string {
 	}
 	firstAncestor := source.Path[ancestorIdx-1]
 	for j := len(source.Path) - 1; j >= ancestorIdx; j-- {
-		pathSb.WriteString(fmt.Sprintf("%T%s", source.Path[j], constant.Up))
+		pathSb.WriteString(fmt.Sprintf("%s%s%s%s", constant.Start, getType(source.Path[j]), constant.End, constant.Up))
 	}
-	pathSb.WriteString(fmt.Sprintf("%T", firstAncestor))
+	pathSb.WriteString(fmt.Sprintf("%s%s%s", constant.Start, getType(firstAncestor), constant.End))
 	for j := ancestorIdx; j < len(target.Path); j++ {
-		pathSb.WriteString(fmt.Sprintf("%s%T", constant.Down, target.Path[j]))
+		pathSb.WriteString(fmt.Sprintf("%s%s%s%s", constant.Down, constant.Start, getType(target.Path[j]), constant.End))
 	}
 
 	return pathSb.String()
+}
+
+func getType(v any) string {
+	tp := ""
+	if t := reflect.TypeOf(v); t.Kind() == reflect.Ptr {
+		tp = t.Elem().Name()
+	} else {
+		tp = t.Name()
+	}
+	op := ""
+	switch v.(type) {
+	case *ast.BinaryExpr:
+		op = v.(*ast.BinaryExpr).Op.String()
+	case *ast.UnaryExpr:
+		op = v.(*ast.UnaryExpr).Op.String()
+	case *ast.AssignStmt:
+		op = v.(*ast.AssignStmt).Tok.String()
+	}
+	if len(op) > 0 {
+		tp += ":" + op
+	}
+	return tp
 }

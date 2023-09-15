@@ -59,7 +59,7 @@ func extractLeavesFromFunc(funcDecl *ast.FuncDecl) []ast.Node {
 	var leafNodes []ast.Node
 	ast.Inspect(funcDecl, func(node ast.Node) bool {
 		switch node.(type) {
-		case *ast.Ident, *ast.BasicLit, *ast.CompositeLit:
+		case *ast.Ident, *ast.BasicLit:
 			leafNodes = append(leafNodes, node)
 		}
 		return true
@@ -119,6 +119,5 @@ func main() {
 		fmt.Println("Error creating extractor:", err)
 		return
 	}
-	ex.ExtractFunctions()
 	ex.GeneratePathForFunctions()
 }

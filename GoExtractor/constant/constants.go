@@ -1,4 +1,8 @@
 package constant
 
-const Up = "^"
-const Down = "_"
+const (
+	Up    = "^"
+	Down  = "_"
+	Start = "("
+	End   = ")"
+)
