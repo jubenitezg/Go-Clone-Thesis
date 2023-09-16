@@ -7,7 +7,7 @@ import (
 
 func main() {
 	filename := "test.go"
-	ex, err := extractor.New(filename)
+	ex, err := extractor.NewExtractor(filename)
 	if err != nil {
 		fmt.Println("Error creating extractor:", err)
 		return

@@ -7,18 +7,20 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"hash/maphash"
 	"reflect"
 	"slices"
 	"strings"
 )
 
 type Extractor struct {
-	parsedAst *ast.File
-	fSet      *token.FileSet
-	Functions []*ast.FuncDecl
+	parsedAst        *ast.File
+	fSet             *token.FileSet
+	Functions        []*ast.FuncDecl
+	FunctionFeatures map[string][]string
 }
 
-func New(file string) (*Extractor, error) {
+func NewExtractor(file string) (*Extractor, error) {
 	fs := token.NewFileSet()
 	parsedAst, err := parser.ParseFile(fs, file, nil, 0)
 	if err != nil {
@@ -26,9 +28,10 @@ func New(file string) (*Extractor, error) {
 	}
 	functions := extractFunctions(parsedAst)
 	ex := &Extractor{
-		parsedAst: parsedAst,
-		fSet:      fs,
-		Functions: functions,
+		parsedAst:        parsedAst,
+		fSet:             fs,
+		Functions:        functions,
+		FunctionFeatures: map[string][]string{},
 	}
 	return ex, nil
 }
@@ -114,17 +117,40 @@ func (e *Extractor) GeneratePathForFunctionsCompare() []string {
 }
 
 func (e *Extractor) GeneratePathForFunctions() []string {
-	var paths []string
+	var totalPaths []string
+	hash := true
 	for _, funcDecl := range e.Functions {
 		leaves := extractLeavesFromFunc(funcDecl)
+		funcName := funcDecl.Name.Name
 		for i := 0; i < len(leaves)-1; i++ {
 			for j := i + 1; j < len(leaves); j++ {
 				path := generatePath(&leaves[i], &leaves[j])
-				paths = append(paths, fmt.Sprintf("%s,%s,%s", leaves[i].String(), path, leaves[j].String()))
+				var fullPath string
+				if hash {
+					var h maphash.Hash
+					_, err := h.WriteString(path)
+					if err != nil {
+						return nil
+					}
+					fullPath = fmt.Sprintf("%s,%d,%s", leaves[i].String(), h.Sum64(), leaves[j].String())
+				} else {
+					fullPath = fmt.Sprintf("%s,%s,%s", leaves[i].String(), path, leaves[j].String())
+				}
+				e.FunctionFeatures[funcName] = append(e.FunctionFeatures[funcName], fullPath)
+				totalPaths = append(totalPaths, fullPath)
 			}
 		}
 	}
-	return paths
+	for k, v := range e.FunctionFeatures {
+		var sb strings.Builder
+		sb.WriteString(fmt.Sprintf("%s ", k))
+		for _, path := range v {
+			sb.WriteString(fmt.Sprintf("%s ", path))
+		}
+		fmt.Println(sb.String())
+	}
+
+	return totalPaths
 }
 
 func extractFunctions(parsedAst *ast.File) []*ast.FuncDecl {
