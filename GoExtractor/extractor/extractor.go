@@ -37,7 +37,10 @@ func NewExtractor(file string, hash bool) (*Extractor, error) {
 
 func (e *Extractor) GenerateProgramAstPaths() []string {
 	var programPaths []string
-	e.generatePathForFunctions()
+	_, err := e.generatePathForFunctions()
+	if err != nil {
+		return nil
+	}
 	for k, v := range e.FunctionFeatures {
 		var sb strings.Builder
 		sb.WriteString(fmt.Sprintf("%s ", k))
@@ -51,7 +54,7 @@ func (e *Extractor) GenerateProgramAstPaths() []string {
 	return programPaths
 }
 
-func (e *Extractor) generatePathForFunctions() []string {
+func (e *Extractor) generatePathForFunctions() ([]string, error) {
 	var totalPaths []string
 	for _, funcDecl := range e.Functions {
 		leaves := extractLeavesFromFunc(funcDecl)
@@ -61,7 +64,7 @@ func (e *Extractor) generatePathForFunctions() []string {
 				nodeRelation, err := generatePathRelation(&leaves[i], &leaves[j])
 				if err != nil {
 					fmt.Println("Error generating path relation:", err)
-					return nil
+					return nil, err
 				}
 				if e.hash {
 					e.FunctionFeatures[funcName] = append(e.FunctionFeatures[funcName], nodeRelation.StringWithHash())
@@ -74,7 +77,7 @@ func (e *Extractor) generatePathForFunctions() []string {
 		}
 	}
 
-	return totalPaths
+	return totalPaths, nil
 }
 
 func extractFunctions(parsedAst *ast.File) []*ast.FuncDecl {

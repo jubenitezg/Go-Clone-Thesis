@@ -40,7 +40,7 @@ func (a *AstNode) String() string {
 	return value
 }
 
-func getOperator(node interface{}) (string, bool) {
+func getOperator(node any) (string, bool) {
 	switch n := node.(type) {
 	case *ast.BinaryExpr:
 		return n.Op.String(), true
