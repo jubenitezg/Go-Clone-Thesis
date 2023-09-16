@@ -7,7 +7,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"hash/maphash"
+	"hash/fnv"
 	"reflect"
 	"slices"
 	"strings"
@@ -18,9 +18,10 @@ type Extractor struct {
 	fSet             *token.FileSet
 	Functions        []*ast.FuncDecl
 	FunctionFeatures map[string][]string
+	hash             bool
 }
 
-func NewExtractor(file string) (*Extractor, error) {
+func NewExtractor(file string, hash bool) (*Extractor, error) {
 	fs := token.NewFileSet()
 	parsedAst, err := parser.ParseFile(fs, file, nil, 0)
 	if err != nil {
@@ -32,6 +33,7 @@ func NewExtractor(file string) (*Extractor, error) {
 		fSet:             fs,
 		Functions:        functions,
 		FunctionFeatures: map[string][]string{},
+		hash:             hash,
 	}
 	return ex, nil
 }
@@ -91,6 +93,7 @@ func (e *Extractor) GeneratePathForFunctionsCompare() []string {
 	var paths []string
 	for _, funcDecl := range e.Functions {
 		leaves := extractLeavesFromFunc(funcDecl)
+		funcName := funcDecl.Name.Name
 		for i := 0; i < len(leaves)-1; i++ {
 			for j := i + 1; j < len(leaves); j++ {
 				path := generatePathCompare(funcDecl, &leaves[i].Node, &leaves[j].Node)
@@ -108,36 +111,20 @@ func (e *Extractor) GeneratePathForFunctionsCompare() []string {
 				case *ast.BasicLit:
 					lj = leaves[j].Node.(*ast.BasicLit).Value
 				}
-				paths = append(paths, fmt.Sprintf("%s,%s,%s", li, path, lj))
-			}
-		}
-	}
-
-	return paths
-}
-
-func (e *Extractor) GeneratePathForFunctions() []string {
-	var totalPaths []string
-	hash := true
-	for _, funcDecl := range e.Functions {
-		leaves := extractLeavesFromFunc(funcDecl)
-		funcName := funcDecl.Name.Name
-		for i := 0; i < len(leaves)-1; i++ {
-			for j := i + 1; j < len(leaves); j++ {
-				path := generatePath(&leaves[i], &leaves[j])
-				var fullPath string
-				if hash {
-					var h maphash.Hash
-					_, err := h.WriteString(path)
+				if e.hash {
+					h := fnv.New64()
+					_, err := h.Write([]byte(path))
 					if err != nil {
 						return nil
 					}
-					fullPath = fmt.Sprintf("%s,%d,%s", leaves[i].String(), h.Sum64(), leaves[j].String())
+					p := fmt.Sprintf("%s,%d,%s", li, h.Sum64(), lj)
+					paths = append(paths, p)
+					e.FunctionFeatures[funcName] = append(e.FunctionFeatures[funcName], p)
 				} else {
-					fullPath = fmt.Sprintf("%s,%s,%s", leaves[i].String(), path, leaves[j].String())
+					p := fmt.Sprintf("%s,%s,%s", li, path, lj)
+					paths = append(paths, p)
+					e.FunctionFeatures[funcName] = append(e.FunctionFeatures[funcName], p)
 				}
-				e.FunctionFeatures[funcName] = append(e.FunctionFeatures[funcName], fullPath)
-				totalPaths = append(totalPaths, fullPath)
 			}
 		}
 	}
@@ -150,7 +137,49 @@ func (e *Extractor) GeneratePathForFunctions() []string {
 		fmt.Println(sb.String())
 	}
 
+	return paths
+}
+
+func (e *Extractor) generatePathForFunctions() []string {
+	var totalPaths []string
+	for _, funcDecl := range e.Functions {
+		leaves := extractLeavesFromFunc(funcDecl)
+		funcName := funcDecl.Name.Name
+		for i := 0; i < len(leaves)-1; i++ {
+			for j := i + 1; j < len(leaves); j++ {
+				nodeRelation, err := generatePathRelation(&leaves[i], &leaves[j])
+				if err != nil {
+					fmt.Println("Error generating path relation:", err)
+					return nil
+				}
+				if e.hash {
+					e.FunctionFeatures[funcName] = append(e.FunctionFeatures[funcName], nodeRelation.StringWithHash())
+					totalPaths = append(totalPaths, nodeRelation.StringWithHash())
+				} else {
+					e.FunctionFeatures[funcName] = append(e.FunctionFeatures[funcName], nodeRelation.String())
+					totalPaths = append(totalPaths, nodeRelation.String())
+				}
+			}
+		}
+	}
+
 	return totalPaths
+}
+
+func (e *Extractor) GenerateProgramAstPaths() []string {
+	var programPaths []string
+	e.generatePathForFunctions()
+	for k, v := range e.FunctionFeatures {
+		var sb strings.Builder
+		sb.WriteString(fmt.Sprintf("%s ", k))
+		for _, path := range v {
+			sb.WriteString(fmt.Sprintf("%s ", path))
+		}
+		fmt.Println(sb.String())
+		programPaths = append(programPaths, sb.String())
+	}
+
+	return programPaths
 }
 
 func extractFunctions(parsedAst *ast.File) []*ast.FuncDecl {
@@ -197,7 +226,7 @@ func extractLeavesFromFunc(funcDecl *ast.FuncDecl) []common.AstNode {
 	return leafNodes
 }
 
-func generatePath(source *common.AstNode, target *common.AstNode) string {
+func generatePathRelation(source *common.AstNode, target *common.AstNode) (*common.NodeRelation, error) {
 	var pathSb strings.Builder
 	ancestorIdx := 0
 	maxAncestorIdx := min(len(source.Path), len(target.Path))
@@ -213,7 +242,7 @@ func generatePath(source *common.AstNode, target *common.AstNode) string {
 		pathSb.WriteString(fmt.Sprintf("%s%s%s%s", constant.Down, constant.Start, target.Path[j].Type(), constant.End))
 	}
 
-	return pathSb.String()
+	return common.NewNodeRelation(source, target, pathSb.String())
 }
 
 func getType(v any) string {

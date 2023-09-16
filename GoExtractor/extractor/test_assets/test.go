@@ -1,4 +1,6 @@
-package main
+package test_assets
+
+// if this file is modified, the ast path of the extractor_test will have to be updated
 
 // i want to ignore this comment
 func add(x, y int) int {
