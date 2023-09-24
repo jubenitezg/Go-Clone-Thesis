@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-extractor/common"
 	"go-extractor/constant"
+	"go-extractor/utils"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -16,9 +17,11 @@ type Extractor struct {
 	Functions        []*ast.FuncDecl
 	FunctionFeatures map[string][]string
 	hash             bool
+	maxLength        int
+	maxWidth         int
 }
 
-func NewExtractor(file string, hash bool) (*Extractor, error) {
+func NewExtractor(file string, hash bool, maxLength, maxWidth int) (*Extractor, error) {
 	fs := token.NewFileSet()
 	parsedAst, err := parser.ParseFile(fs, file, nil, 0)
 	if err != nil {
@@ -31,6 +34,8 @@ func NewExtractor(file string, hash bool) (*Extractor, error) {
 		Functions:        functions,
 		FunctionFeatures: map[string][]string{},
 		hash:             hash,
+		maxLength:        maxLength,
+		maxWidth:         maxWidth,
 	}
 	return ex, nil
 }
@@ -61,10 +66,13 @@ func (e *Extractor) generatePathForFunctions() ([]string, error) {
 		funcName := funcDecl.Name.Name
 		for i := 0; i < len(leaves)-1; i++ {
 			for j := i + 1; j < len(leaves); j++ {
-				nodeRelation, err := generatePathRelation(&leaves[i], &leaves[j])
+				nodeRelation, err := generatePathRelation(&leaves[i], &leaves[j], e.maxLength, e.maxWidth)
 				if err != nil {
 					fmt.Println("Error generating path relation:", err)
 					return nil, err
+				}
+				if nodeRelation == nil {
+					continue
 				}
 				if e.hash {
 					e.FunctionFeatures[funcName] = append(e.FunctionFeatures[funcName], nodeRelation.StringWithHash())
@@ -142,9 +150,12 @@ func mergePaths(source *common.AstNode, target *common.AstNode) ([]common.AstNod
 	return prefix, lca, suffix
 }
 
-func generatePathRelation(source *common.AstNode, target *common.AstNode) (*common.NodeRelation, error) {
+func generatePathRelation(source *common.AstNode, target *common.AstNode, maxLength, maxWidth int) (*common.NodeRelation, error) {
 	var pathSb strings.Builder
 	prefix, lca, suffix := mergePaths(source, target)
+	if !(len(prefix)+1+len(suffix) <= maxLength && (utils.Abs(len(prefix)-len(suffix)) <= maxWidth)) {
+		return nil, nil
+	}
 	for _, node := range prefix {
 		pathSb.WriteString(fmt.Sprintf("%s%s%s%s", constant.Start, node.Type(), constant.End, constant.Up))
 	}

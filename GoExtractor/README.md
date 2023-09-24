@@ -17,7 +17,7 @@ go build -o gextr
 ## Run
 
 ```bash
-./gextr --file <path_to_file> [--hash]
+./gextr --file <path_to_file> [--hash --max-length <max_length> --max-width <max_width>]
 ```
 
 ## Author

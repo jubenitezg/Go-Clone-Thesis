@@ -14,7 +14,7 @@ searchLinear searchLinear,9457696349906653245,arr searchLinear,97576963587257284
 )
 
 func TestExtractorHashedPaths(t *testing.T) {
-	ex, err := NewExtractor(TestFile, true)
+	ex, err := NewExtractor(TestFile, true, 200, 200)
 	if err != nil {
 		t.Error("Error creating extractor:", err)
 		return
@@ -23,7 +23,7 @@ func TestExtractorHashedPaths(t *testing.T) {
 }
 
 func TestExtractorPaths(t *testing.T) {
-	ex, err := NewExtractor(TestFile, false)
+	ex, err := NewExtractor(TestFile, false, 200, 200)
 	if err != nil {
 		t.Error("Error creating extractor:", err)
 		return
