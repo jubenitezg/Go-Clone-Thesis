@@ -35,5 +35,8 @@ func main() {
 		fmt.Println("Error creating extractor:", err)
 		return
 	}
-	ex.GenerateProgramAstPaths()
+	paths := ex.GenerateProgramAstPaths()
+	for _, path := range paths {
+		fmt.Println(path)
+	}
 }

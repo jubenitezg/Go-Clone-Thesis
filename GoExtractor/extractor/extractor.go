@@ -52,7 +52,6 @@ func (e *Extractor) GenerateProgramAstPaths() []string {
 		for _, path := range v {
 			sb.WriteString(fmt.Sprintf("%s ", path))
 		}
-		fmt.Println(sb.String())
 		programPaths = append(programPaths, sb.String())
 	}
 
