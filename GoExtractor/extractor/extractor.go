@@ -124,20 +124,33 @@ func extractLeavesFromFunc(funcDecl *ast.FuncDecl) []common.AstNode {
 	return leafNodes
 }
 
+func mergePaths(source *common.AstNode, target *common.AstNode) ([]common.AstNode, common.AstNode, []common.AstNode) {
+	s, n, m := 0, len(source.Path), len(target.Path)
+	for s < min(n, m) && source.Path[s].Node == target.Path[s].Node {
+		s++
+	}
+	prefix := make([]common.AstNode, 0, len(source.Path)-s)
+	for i := len(source.Path) - 1; i >= s; i-- {
+		prefix = append(prefix, source.Path[i])
+	}
+	var lca common.AstNode
+	if s > 0 {
+		lca = source.Path[s-1]
+	}
+	suffix := target.Path[s:]
+
+	return prefix, lca, suffix
+}
+
 func generatePathRelation(source *common.AstNode, target *common.AstNode) (*common.NodeRelation, error) {
 	var pathSb strings.Builder
-	ancestorIdx := 0
-	maxAncestorIdx := min(len(source.Path), len(target.Path))
-	for ancestorIdx < maxAncestorIdx && source.Path[ancestorIdx].Node == target.Path[ancestorIdx].Node {
-		ancestorIdx++
+	prefix, lca, suffix := mergePaths(source, target)
+	for _, node := range prefix {
+		pathSb.WriteString(fmt.Sprintf("%s%s%s%s", constant.Start, node.Type(), constant.End, constant.Up))
 	}
-	firstAncestor := source.Path[ancestorIdx-1]
-	for j := len(source.Path) - 1; j >= ancestorIdx; j-- {
-		pathSb.WriteString(fmt.Sprintf("%s%s%s%s", constant.Start, source.Path[j].Type(), constant.End, constant.Up))
-	}
-	pathSb.WriteString(fmt.Sprintf("%s%s%s", constant.Start, firstAncestor.Type(), constant.End))
-	for j := ancestorIdx; j < len(target.Path); j++ {
-		pathSb.WriteString(fmt.Sprintf("%s%s%s%s", constant.Down, constant.Start, target.Path[j].Type(), constant.End))
+	pathSb.WriteString(fmt.Sprintf("%s%s%s", constant.Start, lca.Type(), constant.End))
+	for _, node := range suffix {
+		pathSb.WriteString(fmt.Sprintf("%s%s%s%s", constant.Down, constant.Start, node.Type(), constant.End))
 	}
 
 	return common.NewNodeRelation(source, target, pathSb.String())
