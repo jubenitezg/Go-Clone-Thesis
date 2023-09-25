@@ -44,6 +44,8 @@ func main() {
 			for _, s := range strings.Split(path, " ") {
 				fmt.Println(s)
 			}
+		} else {
+			fmt.Println(path)
 		}
 	}
 }
