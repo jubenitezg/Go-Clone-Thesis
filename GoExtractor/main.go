@@ -5,17 +5,20 @@ import (
 	"fmt"
 	"go-extractor/extractor"
 	"os"
+	"strings"
 )
 
 var (
-	hash      *bool
-	file      *string
-	maxLength *int
-	maxWidth  *int
+	hash       *bool
+	cleanPrint *bool
+	file       *string
+	maxLength  *int
+	maxWidth   *int
 )
 
 func init() {
 	hash = flag.Bool("hash", false, "hash path (default: false)")
+	cleanPrint = flag.Bool("clean-print", false, "formatted print path (default: false)")
 	file = flag.String("file", "", "file to parse (required)")
 	maxLength = flag.Int("max-length", 200, "maximum length of path (default: 200)")
 	maxWidth = flag.Int("max-width", 200, "maximum width of path (default: 200)")
@@ -37,6 +40,10 @@ func main() {
 	}
 	paths := ex.GenerateProgramAstPaths()
 	for _, path := range paths {
-		fmt.Println(path)
+		if *cleanPrint {
+			for _, s := range strings.Split(path, " ") {
+				fmt.Println(s)
+			}
+		}
 	}
 }
