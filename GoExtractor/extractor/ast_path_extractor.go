@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-type Extractor struct {
+type AstPathExtractor struct {
 	parsedAst        *ast.File
 	fSet             *token.FileSet
 	Functions        []*ast.FuncDecl
@@ -21,17 +21,20 @@ type Extractor struct {
 	maxWidth         int
 }
 
-func NewExtractor(file string, hash bool, maxLength, maxWidth int) (*Extractor, error) {
+// NewAstPathExtractor creates a new go ast path extractor
+// file: the file to parse
+// hash: whether to hash the path
+// maxLength: maximum length of path
+// maxWidth: maximum width of path
+func NewAstPathExtractor(file string, hash bool, maxLength, maxWidth int) (*AstPathExtractor, error) {
 	fs := token.NewFileSet()
 	parsedAst, err := parser.ParseFile(fs, file, nil, 0)
 	if err != nil {
 		return nil, err
 	}
-	functions := extractFunctions(parsedAst)
-	ex := &Extractor{
+	ex := &AstPathExtractor{
 		parsedAst:        parsedAst,
 		fSet:             fs,
-		Functions:        functions,
 		FunctionFeatures: map[string][]string{},
 		hash:             hash,
 		maxLength:        maxLength,
@@ -40,7 +43,9 @@ func NewExtractor(file string, hash bool, maxLength, maxWidth int) (*Extractor, 
 	return ex, nil
 }
 
-func (e *Extractor) GenerateProgramAstPaths() []string {
+// GenerateProgramAstPaths generates the ast paths for the program
+// returns a slice of strings, each string is a path
+func (e *AstPathExtractor) GenerateProgramAstPaths() []string {
 	var programPaths []string
 	_, err := e.generatePathForFunctions()
 	if err != nil {
@@ -58,9 +63,11 @@ func (e *Extractor) GenerateProgramAstPaths() []string {
 	return programPaths
 }
 
-func (e *Extractor) generatePathForFunctions() ([]string, error) {
+func (e *AstPathExtractor) generatePathForFunctions() ([]string, error) {
 	var totalPaths []string
-	for _, funcDecl := range e.Functions {
+	functions := extractFunctions(e.parsedAst)
+	e.Functions = functions
+	for _, funcDecl := range functions {
 		leaves := extractLeavesFromFunc(funcDecl)
 		funcName := funcDecl.Name.Name
 		for i := 0; i < len(leaves)-1; i++ {
