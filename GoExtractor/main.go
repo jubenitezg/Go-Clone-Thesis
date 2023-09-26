@@ -33,7 +33,7 @@ func init() {
 
 func main() {
 	flag.Parse()
-	ex, err := extractor.NewExtractor(*file, *hash, *maxLength, *maxWidth)
+	ex, err := extractor.NewAstPathExtractor(*file, *hash, *maxLength, *maxWidth)
 	if err != nil {
 		fmt.Println("Error creating extractor:", err)
 		return
