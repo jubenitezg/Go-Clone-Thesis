@@ -2,6 +2,8 @@ name: golangci-lint
 on:
   push:
     branches: [ "main" ]
+    paths:
+     - 'GoExtractor/**'
   pull_request:
     branches: [ "main" ]
 
