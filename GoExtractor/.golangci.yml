@@ -1,0 +1,5 @@
+run:
+  skip-dirs:
+    - extractor/test_assets
+  tests: false
+
