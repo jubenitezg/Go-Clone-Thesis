@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"go-extractor/extractor"
+	"go-ast-extractor/extractor"
 	"os"
 	"strings"
 )
