@@ -2,9 +2,9 @@ package extractor
 
 import (
 	"fmt"
-	"go-extractor/common"
-	"go-extractor/constant"
-	"go-extractor/utils"
+	"go-ast-extractor/common"
+	"go-ast-extractor/constant"
+	"go-ast-extractor/utils"
 	"go/ast"
 	"go/parser"
 	"go/token"

@@ -1,5 +1,5 @@
-# GoExtractor
-A go AST path extractor
+# GoAstExtractor
+A go AST paths extractor
 
 ## Pre-requisites
 
