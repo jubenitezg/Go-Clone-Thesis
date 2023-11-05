@@ -1,0 +1,50 @@
+digraph AST {
+    // labels and shapes
+    Field1[label="Field"]
+    Field2[label="Field"]
+    Person[shape=box]
+    FirstName[shape=box]
+    LastName[shape=box]
+    string1[shape=box,label="string"]
+    string2[shape=box,label="string"]
+
+    // AST
+    TypeSpec -> Ident;
+    Ident -> Person;
+    TypeSpec -> StructType;
+    StructType -> FieldList;
+    FieldList -> Field1;
+    FieldList -> Field2;
+    Field1 -> Ident1;
+    Ident1 -> FirstName;
+    Field1 -> Ident2;
+    Ident2 -> string1;
+    Field2 -> Ident3;
+    Ident3 -> LastName;
+    Field2 -> Ident4;
+    Ident4 -> string2;
+    
+    // AST Paths
+    Person -> Ident[style="solid",color="red", dir=none];
+    Ident -> TypeSpec[style="solid",color="red", dir=none];
+    TypeSpec -> StructType[style="solid",color="red", dir=none];
+    StructType -> FieldList[style="solid",color="red", dir=none];
+    FieldList -> Field1[style="solid",color="red", dir=none];
+    Field1 -> Ident1[style="solid",color="red", dir=none];
+
+    FieldList -> Field2[style="solid",color="blue", dir=none];
+    Field2 -> Ident3[style="solid",color="blue", dir=none];
+    FieldList -> Field1[style="solid",color="blue", dir=none];
+    Field1 -> Ident2[style="solid",color="blue", dir=none];
+    
+    
+    // styles
+    TypeSpec[style=filled]
+    Ident[style=filled, fillcolor="greenyellow"]
+    Ident1[style=filled, fillcolor="greenyellow", label="Ident"]
+    Ident2[style=filled, fillcolor="greenyellow", label="Ident"]
+    Ident3[style=filled, fillcolor="greenyellow", label="Ident"]
+    Ident4[style=filled, fillcolor="greenyellow", label="Ident"]
+
+}
+
