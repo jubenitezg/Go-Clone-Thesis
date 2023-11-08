@@ -1,7 +1,11 @@
 package func_extractor
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
+	"go-func-extractor/common"
 	"go/ast"
 	"go/parser"
 	"go/printer"
@@ -41,7 +45,16 @@ func (f *FuncExtractor) ExtractFunctions() error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(code)
+		var buffer bytes.Buffer
+		encoder := json.NewEncoder(&buffer)
+		encoder.SetEscapeHTML(false)
+		if err = encoder.Encode(common.CodeFragment{
+			Code: code,
+			Id:   uuid.New().String(),
+		}); err != nil {
+			return err
+		}
+		fmt.Print(buffer.String())
 	}
 	return nil
 }
