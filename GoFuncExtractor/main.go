@@ -2,7 +2,9 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	. "go-func-extractor/func_extractor"
+	"os"
 )
 
 var (
@@ -22,5 +24,9 @@ func main() {
 		return
 	}
 	funcExt := NewFuncExtractor(*projectPath, &FuncExtractorConfig{SingleLine: *singleLine})
-	funcExt.ExtractFunctions()
+	err := funcExt.ExtractFunctions()
+	if err != nil {
+		fmt.Println("Error extracting functions:", err)
+		os.Exit(1)
+	}
 }

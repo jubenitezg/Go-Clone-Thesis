@@ -1,6 +1,7 @@
 package func_extractor
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/printer"
@@ -26,22 +27,23 @@ func NewFuncExtractor(projectPath string, c *FuncExtractorConfig) *FuncExtractor
 	}
 }
 
-func (f *FuncExtractor) ExtractFunctions() {
+func (f *FuncExtractor) ExtractFunctions() error {
 	files, err := findAllFiles(f.ProjectPath, ".go")
 	if err != nil {
-		panic(err)
+		return err
 	}
 	functions, err := extractFunctions(files)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	for _, function := range functions {
 		code, err := getFunctionCode(function, f.Config.SingleLine)
 		if err != nil {
-			panic(err)
+			return err
 		}
-		println(code)
+		fmt.Println(code)
 	}
+	return nil
 }
 
 func findAllFiles(dir string, ext string) ([]string, error) {
