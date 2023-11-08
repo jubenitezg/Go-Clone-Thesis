@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	. "go-func-extractor/func_extractor"
@@ -9,12 +11,10 @@ import (
 
 var (
 	projectPath *string
-	singleLine  *bool
 )
 
 func init() {
 	projectPath = flag.String("project-path", "", "path to project to parse (required)")
-	singleLine = flag.Bool("single-line", false, "single line function (default: false)")
 }
 
 func main() {
@@ -23,10 +23,20 @@ func main() {
 		flag.Usage()
 		return
 	}
-	funcExt := NewFuncExtractor(*projectPath, &FuncExtractorConfig{SingleLine: *singleLine})
-	err := funcExt.ExtractFunctions()
+	funcExt := NewFuncExtractor(*projectPath)
+	functions, err := funcExt.ExtractFunctions()
 	if err != nil {
 		fmt.Println("Error extracting functions:", err)
 		os.Exit(1)
+	}
+	for _, function := range functions {
+		var buffer bytes.Buffer
+		encoder := json.NewEncoder(&buffer)
+		encoder.SetEscapeHTML(false)
+		if err = encoder.Encode(function); err != nil {
+			fmt.Println("Error encoding function:", err)
+		} else {
+			fmt.Print(buffer.String())
+		}
 	}
 }

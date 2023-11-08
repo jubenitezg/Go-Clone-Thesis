@@ -1,9 +1,6 @@
 package func_extractor
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
 	"github.com/google/uuid"
 	"go-func-extractor/common"
 	"go/ast"
@@ -17,46 +14,36 @@ import (
 
 type FuncExtractor struct {
 	ProjectPath string
-	Config      *FuncExtractorConfig
 }
 
-type FuncExtractorConfig struct {
-	SingleLine bool
-}
-
-func NewFuncExtractor(projectPath string, c *FuncExtractorConfig) *FuncExtractor {
+func NewFuncExtractor(projectPath string) *FuncExtractor {
 	return &FuncExtractor{
 		ProjectPath: projectPath,
-		Config:      c,
 	}
 }
 
-func (f *FuncExtractor) ExtractFunctions() error {
+func (f *FuncExtractor) ExtractFunctions() ([]common.CodeFragment, error) {
 	files, err := findAllFiles(f.ProjectPath, ".go")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	functions, err := extractFunctions(files)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	codeFragments := make([]common.CodeFragment, 0)
 	for _, function := range functions {
-		code, err := getFunctionCode(function, f.Config.SingleLine)
+		code, err := getFunctionCode(function)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		var buffer bytes.Buffer
-		encoder := json.NewEncoder(&buffer)
-		encoder.SetEscapeHTML(false)
-		if err = encoder.Encode(common.CodeFragment{
+		codeFragment := common.CodeFragment{
 			Code: code,
 			Id:   uuid.New().String(),
-		}); err != nil {
-			return err
 		}
-		fmt.Print(buffer.String())
+		codeFragments = append(codeFragments, codeFragment)
 	}
-	return nil
+	return codeFragments, nil
 }
 
 func findAllFiles(dir string, ext string) ([]string, error) {
@@ -96,16 +83,11 @@ func extractFunctions(filePaths []string) ([]*ast.FuncDecl, error) {
 	return functions, nil
 }
 
-func getFunctionCode(function *ast.FuncDecl, singleLine bool) (string, error) {
+func getFunctionCode(function *ast.FuncDecl) (string, error) {
 	fs := token.NewFileSet()
 	var buf strings.Builder
 	if err := printer.Fprint(&buf, fs, function); err != nil {
 		return "", err
 	}
-	code := buf.String()
-	if singleLine {
-		code = strings.ReplaceAll(code, "\n", "\\n")
-		return code, nil
-	}
-	return code, nil
+	return buf.String(), nil
 }

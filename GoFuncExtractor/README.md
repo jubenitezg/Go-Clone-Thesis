@@ -20,9 +20,17 @@ go build -o gfunc
 ```
 
 ## Run
+From the root of the project run:
 
 ```bash
 ./gfunc --project-path <path_to_project> [--single-line]
+```
+
+## Tests
+From the root of the project run:
+
+```bash
+go test ./...
 ```
 
 ## Example
