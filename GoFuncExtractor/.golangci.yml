@@ -1,0 +1,4 @@
+run:
+  skip-dirs:
+    - func_extractor/test_assets
+  tests: false
