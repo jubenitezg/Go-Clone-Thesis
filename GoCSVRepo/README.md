@@ -7,6 +7,8 @@ A python script to get all the repositories of a specific language and export th
 * Python 3.11+
 * [Poetry](https://python-poetry.org/docs/#installation)
 
+## Note
+Rate limit of GitHub API is 5000 requests per hour.
 
 ## Install
 
