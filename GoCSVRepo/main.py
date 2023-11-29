@@ -37,7 +37,7 @@ def get_metadata_from_repository(
     :return: a dictionary with the repository metadata
     """
     metadata = {'full_name': repo.full_name, 'html_url': repo.html_url, 'stargazers_count': repo.stargazers_count,
-                'forks_count': repo.forks_count, 'collaborators': repo.get_contributors().totalCount,
+                'forks_count': repo.forks_count, 'collaborators_url': repo.collaborators_url,
                 'open_issues_count': repo.open_issues_count, 'description': repo.description, 'archived': repo.archived,
                 'created_at': repo.created_at, 'updated_at': repo.updated_at, 'pushed_at': repo.pushed_at}
     return metadata
