@@ -21,3 +21,5 @@ if __name__ == '__main__':
     args = parse_args()
     g = GithubRepositoryCollector()
     g.collect(args.total)
+
+# 15k repos
