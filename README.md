@@ -5,6 +5,7 @@ Escuela Colombiana de Ingeniería Master Thesis on Computer Science - Bogotá, C
 ## Available Go repositories on GitHub
 
 Total Go repositories on GitHub (excluding forks): `1,332,711`
+Total Go repositories with more than 100 stars: `15863`
 
 ## Author
 
