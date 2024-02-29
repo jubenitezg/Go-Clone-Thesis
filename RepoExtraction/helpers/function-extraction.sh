@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 # Enable to debug
-set -x
+# set -x
 
 cwd=$(pwd)
 
