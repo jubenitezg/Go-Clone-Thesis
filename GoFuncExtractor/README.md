@@ -23,7 +23,7 @@ go build -o gfunc
 From the root of the project run:
 
 ```bash
-./gfunc --project-path <path_to_project> [--single-line]
+./gfunc --project-path <path_to_project>
 ```
 
 ## Tests
