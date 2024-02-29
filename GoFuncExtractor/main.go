@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -11,10 +10,12 @@ import (
 
 var (
 	projectPath *string
+	singleLine  *bool
 )
 
 func init() {
 	projectPath = flag.String("project-path", "", "path to project to parse (required)")
+	singleLine = flag.Bool("single-line", false, "output JSON on a single line")
 }
 
 func main() {
@@ -29,14 +30,15 @@ func main() {
 		fmt.Println("Error extracting functions:", err)
 		os.Exit(1)
 	}
-	for _, function := range functions {
-		var buffer bytes.Buffer
-		encoder := json.NewEncoder(&buffer)
-		encoder.SetEscapeHTML(false)
-		if err = encoder.Encode(function); err != nil {
-			fmt.Println("Error encoding function:", err)
-		} else {
-			fmt.Print(buffer.String())
-		}
+	var jsonData []byte
+	if *singleLine {
+		jsonData, err = json.Marshal(functions)
+	} else {
+		jsonData, err = json.MarshalIndent(functions, "", "    ")
 	}
+	if err != nil {
+		fmt.Println("Error marshalling JSON:", err)
+		return
+	}
+	fmt.Println(string(jsonData))
 }
