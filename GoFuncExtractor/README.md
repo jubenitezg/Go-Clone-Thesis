@@ -39,7 +39,7 @@ Given the following [file](func_extractor/test_assets/file.go)
 
 Run the following command:
 ```bash
-./gfunc --project-path func_extractor/test_assets --single-line
+./gfunc --project-path func_extractor/test_assets
 ```
 
 The output will be:
