@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -30,15 +31,16 @@ func main() {
 		fmt.Println("Error extracting functions:", err)
 		os.Exit(1)
 	}
-	var jsonData []byte
-	if *singleLine {
-		jsonData, err = json.Marshal(functions)
-	} else {
-		jsonData, err = json.MarshalIndent(functions, "", "    ")
+	buffer := new(bytes.Buffer)
+	enc := json.NewEncoder(buffer)
+	enc.SetEscapeHTML(false)
+	if !*singleLine {
+		enc.SetIndent("", "    ")
 	}
+	err = enc.Encode(functions)
 	if err != nil {
 		fmt.Println("Error marshalling JSON:", err)
 		return
 	}
-	fmt.Println(string(jsonData))
+	fmt.Println(buffer.String())
 }
