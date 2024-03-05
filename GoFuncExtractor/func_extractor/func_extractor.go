@@ -1,11 +1,13 @@
 package func_extractor
 
 import (
+	"errors"
 	"github.com/google/uuid"
 	"go-func-extractor/common"
 	"go/ast"
 	"go/parser"
 	"go/printer"
+	"go/scanner"
 	"go/token"
 	"os"
 	"path/filepath"
@@ -75,9 +77,15 @@ func extractFunctions(filePaths []string, fs *token.FileSet) ([]*ast.FuncDecl, [
 	functions := make([]*ast.FuncDecl, 0)
 	paths := make([]string, 0)
 	for _, filePath := range filePaths {
+		_, err := os.Stat(filePath)
+		if os.IsNotExist(err) {
+			continue
+		}
 		file, err := parser.ParseFile(fs, filePath, nil, 0)
 		if err != nil {
-			if strings.Contains(err.Error(), "no such file or directory") {
+			var errorList scanner.ErrorList
+			switch {
+			case errors.As(err, &errorList):
 				continue
 			}
 			return nil, nil, err
