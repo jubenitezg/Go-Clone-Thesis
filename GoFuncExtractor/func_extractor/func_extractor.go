@@ -77,6 +77,9 @@ func extractFunctions(filePaths []string, fs *token.FileSet) ([]*ast.FuncDecl, [
 	for _, filePath := range filePaths {
 		file, err := parser.ParseFile(fs, filePath, nil, 0)
 		if err != nil {
+			if strings.Contains(err.Error(), "no such file or directory") {
+				continue
+			}
 			return nil, nil, err
 		}
 		for _, decl := range file.Decls {
