@@ -21,8 +21,8 @@ setup() {
 main() {
     setup
     pushd "${cwd}/../GitHubMiner/output"
-        i=0
-        jq -r '.[:10] | .[] | "\(.name),\(.owner),\(.url)"' "go-repositories.json" | while IFS= read -r line; do
+        i=15800
+        jq -r '.[15800:15865] | .[] | "\(.name),\(.owner),\(.url)"' "go-repositories.json" | while IFS= read -r line; do
             IFS=',' read -r name owner url <<< "$line"
             echo "Cloning repository: ${owner}/${name}"
             git clone "${url}" "${TMP_DIR}"
