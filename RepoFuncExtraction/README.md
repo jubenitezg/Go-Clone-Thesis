@@ -12,6 +12,13 @@ This sub-module is responsible for extracting the repositories from the GitHub M
 ./extraction.sh -o <output_directory>
 ```
 
+## Output
+
+The [count.txt](count.txt) file contains the total number of functions extracted from all repositories.
+
+> [!IMPORTANT]
+> The total number of functions is: 67.204.319
+
 ## Exceptions
 
 - Skipped repository 189 due to git authentication required
