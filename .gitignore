@@ -161,3 +161,8 @@ cython_debug/
 
 
 vendor/
+
+# LDA
+*.pkl
+*.gensim*
+
