@@ -2,27 +2,32 @@ package main
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
-	"os/exec"
-	. "readme_extraction/model"
+	"readme_extraction/extractor"
+	"readme_extraction/model"
 )
 
 var (
 	inputPath  *string
 	outputDir  *string
 	singleLine *bool
+	from       *int
+	to         *int
+)
+
+const (
+	outputFile = "output.json"
 )
 
 func init() {
 	inputPath = flag.String("input-path", "", "Path to the input file")
 	outputDir = flag.String("output-directory", "", "Path to the output directory")
-	singleLine = flag.Bool("single-line", true, "Whether to output the readme in a single line (default)")
+	singleLine = flag.Bool("single-line", false, "Whether to output the readme in a single line (default: false)")
+	from = flag.Int("from", 0, "From which repository to start extracting")
+	to = flag.Int("to", -1, "To which repository to extract exclusive")
 }
 
 func main() {
@@ -31,49 +36,33 @@ func main() {
 		flag.Usage()
 		return
 	}
-	if _, err := os.Stat(*inputPath); os.IsNotExist(err) {
-		fmt.Printf("File %s does not exist\n", *inputPath)
-		return
-	}
-	file, err := os.ReadFile(*inputPath)
+	var oldRepositories []model.Repository
+	oldFile, err := os.ReadFile(*outputDir + fmt.Sprintf("/%s", outputFile))
 	if err != nil {
-		fmt.Println(err)
-		return
 	}
-	var repositories []*Repository
-	err = json.Unmarshal(file, &repositories)
+	err = json.Unmarshal(oldFile, &oldRepositories)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Error unmarshalling old file:", err)
 		return
 	}
-	for _, repository := range repositories[:2] {
-		cmd := exec.Command("bash", "-c", fmt.Sprintf("git remote show %s | sed -n '/HEAD branch/s/.*: //p' | tr -d '\\n'", repository.URL))
-		branch, err := cmd.Output()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		resp, err := http.Get("https://raw.githubusercontent.com/" + repository.Owner + "/" + repository.Name + "/" + string(branch) + "/README.md")
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		fmt.Println(resp.StatusCode)
-		readmeBytes, _ := io.ReadAll(resp.Body)
-		defer resp.Body.Close()
-		repository.ReadmeBase64 = base64.StdEncoding.EncodeToString(readmeBytes)
+	repositories, err := extractor.
+		NewReadmeExtractor(inputPath, outputDir, from, to).
+		Extract()
+	if err != nil {
+		fmt.Println("Error extracting readmes:", err)
 	}
-
+	// save the repositories to a file even if there are errors
+	oldRepositories = append(oldRepositories, repositories...)
 	buffer := new(bytes.Buffer)
 	enc := json.NewEncoder(buffer)
 	enc.SetEscapeHTML(false)
 	if !*singleLine {
 		enc.SetIndent("", "  ")
 	}
-	err = enc.Encode(repositories)
+	err = enc.Encode(oldRepositories)
 	if err != nil {
 		fmt.Println("Error marshalling JSON:", err)
 		return
 	}
-	err = os.WriteFile(*outputDir+"/output.json", buffer.Bytes(), 0644)
+	err = os.WriteFile(*outputDir+fmt.Sprintf("/%s", outputFile), buffer.Bytes(), 0644)
 }
