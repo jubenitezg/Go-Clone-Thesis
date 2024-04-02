@@ -1,27 +1,34 @@
 package main
 
 import (
-	"encoding/csv"
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
+	"os/exec"
 	. "readme_extraction/model"
 )
 
 var (
-	inputPath *string
+	inputPath  *string
+	outputDir  *string
+	singleLine *bool
 )
 
 func init() {
-	inputPath = flag.String("input", "", "Path to the input file")
-
+	inputPath = flag.String("input-path", "", "Path to the input file")
+	outputDir = flag.String("output-directory", "", "Path to the output directory")
+	singleLine = flag.Bool("single-line", true, "Whether to output the readme in a single line (default)")
 }
 
 func main() {
 	flag.Parse()
-	if *inputPath == "" {
-		flag.PrintDefaults()
+	if *inputPath == "" || *outputDir == "" {
+		flag.Usage()
 		return
 	}
 	if _, err := os.Stat(*inputPath); os.IsNotExist(err) {
@@ -33,67 +40,40 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	var repositories []Repository
+	var repositories []*Repository
 	err = json.Unmarshal(file, &repositories)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	var repositoryDescriptions []RepositoryDescription
-	for i := 0; i < len(repositories); i++ {
-		fmt.Println(repositories[i])
-		//cmd := exec.Command("bash", "-c", fmt.Sprintf("git remote show %s | sed -n '/HEAD branch/s/.*: //p' | tr -d '\\n'", repositories[i].URL))
-		//branch, err := cmd.Output()
-		//if err != nil {
-		//	fmt.Println(err)
-		//	return
-		//}
-		//resp, err := http.Get("https://raw.githubusercontent.com/" + repositories[i].Owner + "/" + repositories[i].Name + "/" + string(branch) + "/README.md")
-		//if err != nil {
-		//	fmt.Println(err)
-		//	return
-		//}
-		//fmt.Println(resp.StatusCode)
-		//all, _ := io.ReadAll(resp.Body)
-		//re := regexp.MustCompile(`\r?\n`)
-		//descs := re.ReplaceAllString(string(all), " ")
-		//fullDescription := repositories[i].Description + descs + "TOPICS:" + fmt.Sprint(repositories[i].Topics)
-		//readme := string(all)
-		repositoryDescriptions = append(repositoryDescriptions, RepositoryDescription{
-			Name:        repositories[i].Name,
-			Owner:       repositories[i].Owner,
-			Description: repositories[i].Description,
-			Topics:      repositories[i].Topics,
-			//Readme:      descs,
-			//ReadmeBytes: all,
-		})
-		//defer resp.Body.Close()
+	for _, repository := range repositories[:2] {
+		cmd := exec.Command("bash", "-c", fmt.Sprintf("git remote show %s | sed -n '/HEAD branch/s/.*: //p' | tr -d '\\n'", repository.URL))
+		branch, err := cmd.Output()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		resp, err := http.Get("https://raw.githubusercontent.com/" + repository.Owner + "/" + repository.Name + "/" + string(branch) + "/README.md")
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println(resp.StatusCode)
+		readmeBytes, _ := io.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		repository.ReadmeBase64 = base64.StdEncoding.EncodeToString(readmeBytes)
 	}
-	csvFile, err := os.Create("output.csv")
+
+	buffer := new(bytes.Buffer)
+	enc := json.NewEncoder(buffer)
+	enc.SetEscapeHTML(false)
+	if !*singleLine {
+		enc.SetIndent("", "  ")
+	}
+	err = enc.Encode(repositories)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Error marshalling JSON:", err)
 		return
 	}
-	defer csvFile.Close()
-	csvwriter := csv.NewWriter(csvFile)
-	csvwriter.Write([]string{"name", "owner", "description", "topics"})
-	defer csvwriter.Flush()
-	// removed readme from the csv since there are some issues with length of the readme
-	for _, repositoryDescription := range repositoryDescriptions {
-		//var b bytes.Buffer
-		//gz := gzip.NewWriter(&b)
-		//if _, err := gz.Write(repositoryDescription.ReadmeBytes); err != nil {
-		//	log.Fatal(err)
-		//}
-		//if err := gz.Close(); err != nil {
-		//	log.Fatal(err)
-		//}
-		//fmt.Println(b.Bytes())
-		err := csvwriter.Write([]string{repositoryDescription.Name, repositoryDescription.Owner, repositoryDescription.Description, fmt.Sprint(repositoryDescription.Topics)})
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println(repositoryDescription)
-	}
-	fmt.Println("Done")
+	err = os.WriteFile(*outputDir+"/output.json", buffer.Bytes(), 0644)
 }

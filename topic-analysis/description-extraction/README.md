@@ -1,1 +1,2 @@
-Getting trimmed at 3985-6 characters
+# Description Extractor
+This module uses the output from the GitHub Miner Tool (json)
