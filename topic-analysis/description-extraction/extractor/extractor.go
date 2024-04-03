@@ -73,8 +73,8 @@ func getReadmeBase64(repository *model.Repository) (string, error) {
 	outputBytes, err := cmd.Output()
 	output := string(outputBytes)
 	if err != nil {
-		// repo has no readme
-		if strings.Contains(output, "Not Found") {
+		// repo has no readme or repo is disabled
+		if strings.Contains(output, "Not Found") || strings.Contains(output, "access blocked") {
 			return "", nil
 		}
 		return "", err
