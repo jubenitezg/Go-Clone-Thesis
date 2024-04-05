@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "lda"
+version = "0.1.0"
+description = ""
+authors = ["JulianBenitez <julian.benitez@mail.escuelaing.edu.co>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+spacy = "^3.7.4"
+gensim = "^4.3.2"
+pandas = "^2.2.1"
+scikit-learn = "^1.4.1.post1"
+pyldavis = "^3.4.1"
+matplotlib = "^3.8.3"
+seaborn = "^0.13.2"
+jupyter = "^1.0.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
