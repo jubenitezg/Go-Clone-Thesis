@@ -1,7 +1,7 @@
 #!/bin/bash
 
 mkdir -p saved_models
-poetry run python run.py \
+python run.py \
     --output_dir=saved_models \
     --config_name=microsoft/graphcodebert-base \
     --model_name_or_path=microsoft/graphcodebert-base \
