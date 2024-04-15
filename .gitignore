@@ -167,3 +167,7 @@ vendor/
 *.gensim*
 
 output.json
+
+tree-sitter-*/
+dataset/
+saved_models/
