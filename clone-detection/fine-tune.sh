@@ -12,9 +12,8 @@ python run.py \
     --test_data_file=dataset/test.txt \
     --epoch 1 \
     --code_length 512 \
-    --data_flow_length 128 \
-    --train_batch_size 16 \
-    --eval_batch_size 32 \
+    --train_batch_size 8 \
+    --eval_batch_size 8 \
     --learning_rate 2e-5 \
     --max_grad_norm 1.0 \
     --evaluate_during_training \
