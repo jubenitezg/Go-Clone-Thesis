@@ -11,7 +11,7 @@ type Metadata struct {
 	Languages    map[string]int `json:"languages"`
 	License      string         `json:"license"`
 	Issues       int            `json:"issues"`
-	// LOC
+	LOC          map[string]any `json:"loc"`
 }
 
 type Repository struct {
