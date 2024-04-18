@@ -33,6 +33,10 @@ func GetRepositoryMetadata(repo *model.Repository) (*model.Metadata, error) {
 	if err != nil {
 		return nil, err
 	}
+	loc, err := getLoc(path)
+	if err != nil {
+		return nil, err
+	}
 	defer func(path string) {
 		err := deleteDir(path)
 		if err != nil {
@@ -51,6 +55,7 @@ func GetRepositoryMetadata(repo *model.Repository) (*model.Metadata, error) {
 		Languages:    languages,
 		Commits:      commits,
 		Contributors: contributors,
+		LOC:          loc,
 	}, nil
 }
 
@@ -156,4 +161,18 @@ func deleteDir(path string) error {
 		return fmt.Errorf("cannot delete %s", path)
 	}
 	return os.RemoveAll(path)
+}
+
+func getLoc(path string) (map[string]any, error) {
+	cmd := exec.Command("cloc", "--json", path)
+	outBytes, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	var loc map[string]any
+	err = json.Unmarshal(outBytes, &loc)
+	if err != nil {
+		return nil, err
+	}
+	return loc, nil
 }
