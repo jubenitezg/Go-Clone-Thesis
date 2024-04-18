@@ -3,7 +3,7 @@ on:
   push:
     branches: [ "main" ]
     paths:
-     - 'GoFuncExtractor/**'
+     - 'function-extractor/**'
   pull_request:
     branches: [ "main" ]
 
@@ -29,10 +29,10 @@ jobs:
           version: v1.54
 
           # Optional: working directory, useful for monorepos
-          working-directory: GoFuncExtractor
+          working-directory: function-extractor
 
           # Optional: golangci-lint command line arguments.
-          #args: --config=GoAstExtractor/.golangci.yml
+          #args: --config=function-extractor/.golangci.yml
 
           # Optional: show only new issues if it's a pull request. The default value is `false`.
           # only-new-issues: true
