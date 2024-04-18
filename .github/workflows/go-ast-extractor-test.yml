@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - 'GoAstExtractor/**'
+      - 'ast-builder/**'
   pull_request:
     branches: [ "main" ]
 
@@ -23,5 +23,5 @@ jobs:
         go-version: '1.21.x'
 
     - name: Run Tests
-      run: cd GoAstExtractor && go test ./...
+      run: cd ast-builder && go test ./...
 
