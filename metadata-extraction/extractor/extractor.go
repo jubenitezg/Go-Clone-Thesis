@@ -64,6 +64,9 @@ func clone(repo *model.Repository) (string, error) {
 		fmt.Println(fmt.Sprintf("Skipping repository %s/%s due to authentication required error", repo.Owner, repo.Name))
 		return "", nil
 	}
+	if err != nil && strings.Contains("repository already exists", err.Error()) {
+		return path, nil
+	}
 	return path, err
 }
 
@@ -93,8 +96,18 @@ func getContributors(repo *model.Repository) (int, error) {
 	if err != nil {
 		return -1, err
 	}
-	contributorsRaw := doc.Find("div.BorderGrid-row:nth-child(4) > div:nth-child(1) > h2:nth-child(1) > a:nth-child(1) > span:nth-child(1)").
-		Text()
+	counterNodes := doc.Find(".Counter.ml-1").Nodes
+	var contributorsRaw string
+	for _, node := range counterNodes {
+		if strings.Contains(node.PrevSibling.Data, "Contributors") {
+			for _, attribute := range node.Attr {
+				if attribute.Key == "title" {
+					contributorsRaw = attribute.Val
+					break
+				}
+			}
+		}
+	}
 	contributorsStr := strings.Replace(contributorsRaw, ",", "", -1)
 	contributors, err := strconv.Atoi(contributorsStr)
 	if err != nil {
@@ -139,7 +152,7 @@ func verifyRateLimit() int {
 }
 
 func deleteDir(path string) error {
-	if strings.HasPrefix(path, "/tmp") && path != "/tmp" {
+	if !strings.HasPrefix(path, "/tmp") && path != "/tmp" {
 		return fmt.Errorf("cannot delete %s", path)
 	}
 	return os.RemoveAll(path)
