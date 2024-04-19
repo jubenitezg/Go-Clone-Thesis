@@ -14,13 +14,10 @@ import (
 
 var (
 	inputPath  *string
-	outputDir  *string
+	outputFile *string
 	singleLine *bool
 	from       *int
-)
-
-const (
-	outputFile = "output.json"
+	to         *int
 )
 
 var errors = color.New(color.FgRed).Add(color.Bold)
@@ -28,9 +25,10 @@ var info = color.New(color.FgYellow)
 
 func init() {
 	inputPath = flag.String("input-path", "", "Path to the input file")
-	outputDir = flag.String("output-directory", "", "Path to the output directory")
+	outputFile = flag.String("output-file", "output.json", "Path to the output directory")
 	singleLine = flag.Bool("single-line", false, "Whether to output the readme in a single line (default: false)")
 	from = flag.Int("from", 0, "From which repository to start extracting")
+	to = flag.Int("to", -1, "To which repository to extract exclusive")
 }
 
 func save(prevMetadata []model.Metadata) {
@@ -45,7 +43,7 @@ func save(prevMetadata []model.Metadata) {
 		errors.Println("Error marshalling JSON:", err)
 		return
 	}
-	err = os.WriteFile(*outputDir+fmt.Sprintf("/%s", outputFile), buffer.Bytes(), 0644)
+	err = os.WriteFile(fmt.Sprintf("output/%s", *outputFile), buffer.Bytes(), 0644)
 	if err != nil {
 		errors.Println("Error writing to file:", err)
 	}
@@ -53,12 +51,12 @@ func save(prevMetadata []model.Metadata) {
 
 func main() {
 	flag.Parse()
-	if *inputPath == "" || *outputDir == "" {
+	if *inputPath == "" || *outputFile == "" {
 		flag.Usage()
 		return
 	}
 	var prevMetadata []model.Metadata
-	prevFile, err := os.ReadFile(*outputDir + fmt.Sprintf("/%s", outputFile))
+	prevFile, err := os.ReadFile(fmt.Sprintf("output/%s", outputFile))
 	if err == nil {
 		err = json.Unmarshal(prevFile, &prevMetadata)
 		if err != nil {
@@ -80,11 +78,12 @@ func main() {
 		errors.Println(err)
 	}
 
-	for i, repository := range repositories[*from:5] {
-		if i == 1 {
-			//skip repository 2 for testing purposes
-			continue
-		}
+	if to == nil || *to == -1 {
+		*to = len(repositories)
+	}
+
+	info.Println("Range: " + fmt.Sprint(*from) + " to " + fmt.Sprint(*to))
+	for i, repository := range repositories[*from:*to] {
 		info.Println("Repository #" + fmt.Sprint(i) + ": " + repository.Owner + "/" + repository.Name)
 		metadata, err := extractor.GetRepositoryMetadata(&repository)
 		if err != nil {
