@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/fatih/color"
 	"metadata-extraction/extractor"
 	"metadata-extraction/model"
 	"os"
+	"strings"
 )
 
 var (
@@ -21,6 +23,9 @@ const (
 	outputFile = "output.json"
 )
 
+var errors = color.New(color.FgRed).Add(color.Bold)
+var info = color.New(color.FgYellow)
+
 func init() {
 	inputPath = flag.String("input-path", "", "Path to the input file")
 	outputDir = flag.String("output-directory", "", "Path to the output directory")
@@ -28,8 +33,7 @@ func init() {
 	from = flag.Int("from", 0, "From which repository to start extracting")
 }
 
-func save(prevMetadata []*model.Metadata, metadata *model.Metadata) {
-	prevMetadata = append(prevMetadata, metadata)
+func save(prevMetadata []model.Metadata) {
 	buffer := new(bytes.Buffer)
 	enc := json.NewEncoder(buffer)
 	enc.SetEscapeHTML(false)
@@ -38,12 +42,12 @@ func save(prevMetadata []*model.Metadata, metadata *model.Metadata) {
 	}
 	err := enc.Encode(prevMetadata)
 	if err != nil {
-		fmt.Println("Error marshalling JSON:", err)
+		errors.Println("Error marshalling JSON:", err)
 		return
 	}
 	err = os.WriteFile(*outputDir+fmt.Sprintf("/%s", outputFile), buffer.Bytes(), 0644)
 	if err != nil {
-		fmt.Println("Error writing to file:", err)
+		errors.Println("Error writing to file:", err)
 	}
 }
 
@@ -53,40 +57,49 @@ func main() {
 		flag.Usage()
 		return
 	}
-	var prevMetadata []*model.Metadata
+	var prevMetadata []model.Metadata
 	prevFile, err := os.ReadFile(*outputDir + fmt.Sprintf("/%s", outputFile))
 	if err == nil {
 		err = json.Unmarshal(prevFile, &prevMetadata)
 		if err != nil {
-			fmt.Println("Error unmarshalling old file:", err)
+			errors.Println("Error unmarshalling old file:", err)
 		}
 	} else {
-		fmt.Println("Error reading old file:", err)
+		errors.Println("Error reading old file:", err)
 	}
-	var repositories []*model.Repository
+	var repositories []model.Repository
 	if _, err := os.Stat(*inputPath); os.IsNotExist(err) {
-		fmt.Printf("file %s does not exist\n", *inputPath)
+		errors.Printf("file %s does not exist\n", *inputPath)
 	}
 	file, err := os.ReadFile(*inputPath)
 	if err != nil {
-		fmt.Println(err)
+		errors.Println(err)
 	}
 	err = json.Unmarshal(file, &repositories)
 	if err != nil {
-		fmt.Println(err)
+		errors.Println(err)
 	}
 
-	for i, repository := range repositories[*from:1] {
-		fmt.Println("Repository #" + fmt.Sprint(i) + ": " + repository.Owner + "/" + repository.Name)
-		metadata, err := extractor.GetRepositoryMetadata(repository)
+	for i, repository := range repositories[*from:5] {
+		if i == 1 {
+			//skip repository 2 for testing purposes
+			continue
+		}
+		info.Println("Repository #" + fmt.Sprint(i) + ": " + repository.Owner + "/" + repository.Name)
+		metadata, err := extractor.GetRepositoryMetadata(&repository)
 		if err != nil {
-			fmt.Println(err)
+			errors.Println(err)
+			if strings.Contains(err.Error(), "rate limit exceeded") {
+				errors.Println("Rate limit exceeded, current repository processed: " + fmt.Sprint(i))
+				os.Exit(1)
+			}
 		}
 		if metadata != nil {
-			save(prevMetadata, metadata)
+			info.Println("Saving repository" + fmt.Sprint(i))
+			prevMetadata = append(prevMetadata, *metadata)
+			save(prevMetadata)
 		} else {
-			fmt.Println("Skipping repository" + fmt.Sprint(i))
+			info.Println("Skipping repository" + fmt.Sprint(i))
 		}
 	}
-
 }
