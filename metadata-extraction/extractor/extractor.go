@@ -30,9 +30,6 @@ func GetRepositoryMetadata(repo *model.Repository) (*model.Metadata, error) {
 		return nil, err
 	}
 	contributors, err := getContributors(repo)
-	if err != nil {
-		return nil, err
-	}
 	loc, err := getLoc(path)
 	if err != nil {
 		return nil, err
