@@ -83,8 +83,10 @@ func main() {
 	}
 
 	info.Println("Range: " + fmt.Sprint(*from) + " to " + fmt.Sprint(*to))
+	skipped := make([]int, 0)
 	for i, repository := range repositories[*from:*to] {
-		info.Println("Repository #" + fmt.Sprint(i) + ": " + repository.Owner + "/" + repository.Name)
+		realIndex := i + *from
+		info.Println("Repository #" + fmt.Sprint(realIndex) + ": " + repository.Owner + "/" + repository.Name)
 		metadata, err := extractor.GetRepositoryMetadata(&repository)
 		if err != nil {
 			errors.Println(err)
@@ -94,11 +96,13 @@ func main() {
 			}
 		}
 		if metadata != nil {
-			info.Println("Saving repository" + fmt.Sprint(i))
+			info.Println("Saving repository " + fmt.Sprint(realIndex))
 			prevMetadata = append(prevMetadata, *metadata)
 			save(prevMetadata)
 		} else {
-			info.Println("Skipping repository" + fmt.Sprint(i))
+			skipped = append(skipped, realIndex)
+			info.Println("Skipping repository " + fmt.Sprint(realIndex))
 		}
 	}
+	info.Println("Skipped repositories: " + fmt.Sprint(skipped))
 }
