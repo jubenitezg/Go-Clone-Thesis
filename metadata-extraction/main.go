@@ -56,7 +56,7 @@ func main() {
 		return
 	}
 	var prevMetadata []model.Metadata
-	prevFile, err := os.ReadFile(fmt.Sprintf("output/%s", outputFile))
+	prevFile, err := os.ReadFile(fmt.Sprintf("output/%s", *outputFile))
 	if err == nil {
 		err = json.Unmarshal(prevFile, &prevMetadata)
 		if err != nil {
