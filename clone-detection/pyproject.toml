@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "clone-detection"
+version = "0.1.0"
+description = ""
+authors = ["JulianBenitez <julian.benitez@mail.escuelaing.edu.co>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+torch = "^2.3.0"
+transformers = "^4.41.2"
+boto3 = "^1.34.118"
+jupyter = "^1.0.0"
+multiprocess = "^0.70.16"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
