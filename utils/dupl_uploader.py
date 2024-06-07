@@ -5,25 +5,14 @@ import shutil
 import threading
 
 import boto3
-from git import Repo, RemoteProgress
+from git import Repo
+
 
 BUCKET = os.environ.get('BUCKET')
 s3 = boto3.client('s3')
 
 cpu_count = os.cpu_count()
-# lock = threading.Lock()
-from tqdm import tqdm
-
-
-class CloneProgress(RemoteProgress):
-    def __init__(self):
-        super().__init__()
-        self.pbar = tqdm()
-
-    def update(self, op_code, cur_count, max_count=None, message=''):
-        self.pbar.total = max_count
-        self.pbar.n = cur_count
-        self.pbar.refresh()
+lock = threading.Lock()
 
 
 def get_metadata():
@@ -56,26 +45,24 @@ def process(repository):
     name = repository['name']
     path = f"/tmp/{owner}--{name}"
     print(f"Cloning {owner}/{name}")
-    Repo.clone_from(url, path, depth=1, progress=CloneProgress())
-    # Repo.clone_from(url, path, depth=1)
+    Repo.clone_from(url, path, depth=1)
     print(f"Executing dupl {owner}/{name}")
     execute_dupl(path)
     save_dupl_output(path, f"{owner}/{name}")
     print(f"Saved dupl {owner}/{name}")
+    with lock:
+        processed.append(url)
+        save_processed_repositories(processed)
+        print(f"Processed {owner}/{name}")
     shutil.rmtree(path)
-    # with lock:
-    processed.append(url)
-    save_processed_repositories(processed)
-    print(f"Processed {owner}/{name}")
 
 
 if __name__ == '__main__':
-    # save_processed_repositories([])
+    print("Available CPU", cpu_count)
+    print("Getting metadata")
     metadata = get_metadata()
     processed = get_processed_repositories()
     print(f"Processed: {len(processed)}/{len(metadata)}")
     missing = [item for item in metadata if item['url'] not in processed]
-    # with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
-    #     executor.map(process, missing)
-    for item in missing:
-        process(item)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=cpu_count//2) as executor:
+        executor.map(process, missing)
