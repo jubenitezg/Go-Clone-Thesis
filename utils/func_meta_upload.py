@@ -1,7 +1,7 @@
-import boto3
 import json
-import os
 from concurrent.futures import ThreadPoolExecutor
+
+import boto3
 
 METADATA = "../metadata-extraction/output/merged.json"
 FUNCTIONS_DIR = "/Volumes/JB-DISK/functions-repos"
@@ -11,6 +11,7 @@ with open(METADATA, 'r') as f:
     metadata = json.load(f)
 
 s3 = boto3.client('s3')
+
 
 def upload_function(item):
     name = item['name']
@@ -26,8 +27,10 @@ def upload_function(item):
     except FileNotFoundError:
         print(f"No functions found for {owner}/{name}")
 
+
 def upload_all(metadata):
     with ThreadPoolExecutor() as executor:
         executor.map(upload_function, metadata)
+
 
 upload_all(metadata)

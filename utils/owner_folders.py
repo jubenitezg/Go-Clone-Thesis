@@ -1,6 +1,10 @@
 import boto3
 import json
 
+"""
+Creates s3 folders for each owner in the go-repositories.json file
+"""
+
 FILE = "../GitHubMiner/output/go-repositories.json"
 BUCKET = "go-project-functions"
 
