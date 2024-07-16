@@ -37,13 +37,15 @@ def percentage_of_clones_example():
 
     plt.show()
 
+
 def clone_count(df, thresh=0.8):
     clones = (df['similarity'] >= thresh).sum()
+    return clones
     # no clones
-    not_clones = (df['similarity'] < thresh).sum()
-    print("clones", clones)
-    print("not clones", not_clones)
-    return (clones - not_clones) / not_clones * 100
+    # not_clones = (df['similarity'] < thresh).sum()
+    # print("clones", clones)
+    # print("not clones", not_clones)
+    # return (clones - not_clones) / not_clones * 100
 
 
 def utility_print(metadata):
@@ -55,9 +57,54 @@ def utility_print(metadata):
     print(f"Created At: {metadata['createdAt']}")
 
 
+def full(repositories):
+    similarities = []
+    metadatas = []
+    topics = common.s3_load_json(f"{common.DATA_TOPICS}")
+    for topic in topics:
+        topic['repo_id'] = f"{topic['owner']}/{topic['name']}"
+    for repo in repositories:
+        key = f"{repo['owner']}/{repo['name']}"
+        try:
+            similarity = common.s3_load_json(f"{key}/{common.SIMILARITIES}")
+            data = {'repo_id': key, 'num_pair_clones': clone_count(pd.DataFrame(similarity))}
+            similarities.append(data)
+            metadata = common.s3_load_json(f"{key}/{common.METADATA}")
+            metadata['repo_id'] = key
+            metadatas.append(metadata)
+        except:
+            print("skipp", key)
+
+    simdf = pd.DataFrame(similarities)
+    metasdf = pd.DataFrame(metadatas)
+    simmeta_data = pd.merge(simdf, metasdf, on='repo_id')
+    topics = pd.DataFrame(topics)
+    final_data = pd.merge(simmeta_data, topics, on='repo_id')
+    print(final_data.head())
+    return final_data
+
+
+def test_analysis(df):
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    import matplotlib
+    matplotlib.use('TkAgg')
+    correlation_matrix = df.corr(numeric_only=True)
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
+    plt.show()
+
+
+
+
 
 if __name__ == '__main__':
-    percentage_of_clones_example()
+    metadata_full = common.s3_load_json(f'{common.METADATA}')
+    data_full = full(metadata_full[:1000])
+    test_analysis(data_full)
+
+
+    # percentage_of_clones_example()
     # key = 'mislav/hub'
     # similarities = common.s3_load_json(f"{key}/{common.SIMILARITIES}")
     # metadata = common.s3_load_json(f"{key}/{common.METADATA}")
