@@ -89,17 +89,19 @@ def normalize_data():
     print(f"Incomplete: {len(incomplete)}")
     process = [r for r in repos if r not in repositories_completed and r not in incomplete]
     tp = load_topics()
-    for repo_id in process[:10]:
+    for repo_id in process:
         data = load_data(repo_id, tp)
         if data is not None:
             common.s3_save_json(f"{repo_id}/{common.DATA}", data.__dict__)
             repositories_completed.append(repo_id)
             common.s3_save_json(common.NORM_REPOSITORIES, repositories_completed)
             print("completed", repo_id)
+            print(f"Processed: {len(repositories_completed)}/{len(repos)}")
         else:
             incomplete.append(repo_id)
             common.s3_save_json(common.INCOMPLETE_NORM_REPOSITORIES, incomplete)
             print("incomplete", repo_id)
+            print(f"Incomplete: {len(incomplete)}")
 
 
 def panda_approach():

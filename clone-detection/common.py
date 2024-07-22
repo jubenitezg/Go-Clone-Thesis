@@ -9,7 +9,12 @@ logger = logging.getLogger(__name__)
 
 SIMILARITIES = 'similarities.json'
 METADATA = 'metadata.json'
+DATA = 'data.json'
+NORM_REPOSITORIES = 'normalized_repositories.json'
+REPOSITORIES = 'repositories.json'
+INCOMPLETE_NORM_REPOSITORIES = 'incomplete_normalized_repositories.json'
 DATA_TOPICS = 'data_topics.json'
+DATA_TOPICS_NORM = 'data_topics_normalized.json'
 DATA_TOPICS_READABLE = 'data_topics_readable.json'
 BUCKET = os.environ.get('BUCKET')
 DUPL = 'dupl_files.json'
