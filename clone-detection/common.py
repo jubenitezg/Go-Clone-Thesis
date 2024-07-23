@@ -47,3 +47,12 @@ def s3_save_json(key, data):
         S3.put_object(Bucket=BUCKET, Key=key, Body=json.dumps(data))
     except Exception as e:
         logger.error(f"Error saving {key}: {e}")
+
+
+def s3_upload_file(file_name, object_name=None):
+    if object_name is None:
+        object_name = os.path.basename(file_name)
+    try:
+        response = S3.upload_file(file_name, BUCKET, object_name)
+    except Exception as e:
+        logger.error(f"Error saving file {file_name}", e)
