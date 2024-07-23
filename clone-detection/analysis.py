@@ -1,14 +1,14 @@
 from io import StringIO
-
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-import matplotlib
-
-import common
 from sys import platform
 
-if platform == "linux" or platform == "linux2":
+import matplotlib
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
+import common
+
+if platform in ('linux' or 'linux2'):
     matplotlib.use('TkAgg')
 
 
@@ -44,59 +44,6 @@ def percentage_of_clones_example():
     plt.show()
 
 
-def clone_count(df, thresh=0.8):
-    clones = (df['similarity'] >= thresh).sum()
-    return clones
-    # no clones
-    # not_clones = (df['similarity'] < thresh).sum()
-    # print("clones", clones)
-    # print("not clones", not_clones)
-    # return (clones - not_clones) / not_clones * 100
-
-
-def utility_print(metadata):
-    print(f"Metadata for {metadata['owner']}/{metadata['name']}")
-    print(f"Commits: {metadata['commits']}")
-    print(f"Contributors: {metadata['contributors']}")
-    print(f"Stars: {metadata['contributors']}")
-    print(f"Go: {metadata['loc']['Go']}")
-    print(f"Created At: {metadata['createdAt']}")
-
-
-def full(repositories):
-    similarities = []
-    metadatas = []
-    topics = common.s3_load_json(f"{common.DATA_TOPICS}")
-    for topic in topics:
-        topic['repo_id'] = f"{topic['owner']}/{topic['name']}"
-    for repo in repositories:
-        key = f"{repo['owner']}/{repo['name']}"
-        try:
-            similarity = common.s3_load_json(f"{key}/{common.SIMILARITIES}")
-            data = {'repo_id': key, 'num_pair_clones': clone_count(pd.DataFrame(similarity))}
-            similarities.append(data)
-            metadata = common.s3_load_json(f"{key}/{common.METADATA}")
-            metadata['repo_id'] = key
-            metadatas.append(metadata)
-        except:
-            print("skipp", key)
-
-    simdf = pd.DataFrame(similarities)
-    metasdf = pd.DataFrame(metadatas)
-    simmeta_data = pd.merge(simdf, metasdf, on='repo_id')
-    topics = pd.DataFrame(topics)
-    final_data = pd.merge(simmeta_data, topics, on='repo_id')
-    print(final_data.head())
-    return final_data
-
-
-def check_analysis(df):
-    correlation_matrix = df.corr(numeric_only=True)
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
-    plt.show()
-
-
 def topics_distribution():
     topics = common.s3_load_json(f"{common.DATA_TOPICS_NORM}")
     df = pd.read_json(StringIO(topics))
@@ -116,23 +63,26 @@ def topics_distribution():
     plt.show()
 
 
+def quick_analysis():
+    df = pd.read_csv('full.csv')
+    df_melted = df.melt(id_vars=['repo_id', 'similarities'],
+                        value_vars=[col for col in df.columns if col.startswith('topics.topic_')],
+                        var_name='topic_id', value_name='topic_value')
+    df_melted = df_melted.dropna(subset=['topic_value'])
+    df_melted = df_melted.dropna(subset=['similarities'])
+
+    domain_clones_relationship = df_melted.groupby('topic_value')['similarities'].mean().reset_index()
+    print("Relationship between application domain and number of clones:")
+    print(domain_clones_relationship)
+
+    plt.figure(figsize=(12, 6))
+    plt.bar(domain_clones_relationship['topic_value'], domain_clones_relationship['similarities'])
+    plt.xlabel('Application Domain')
+    plt.ylabel('Average Number of Clones')
+    plt.title('Relationship Between Application Domain and Number of Clones')
+    plt.xticks(rotation=45)
+    plt.show()
+
+
 if __name__ == '__main__':
-    topics_distribution()
-    # metadata_full = common.s3_load_json(f'{common.METADATA}')
-    # data_full = full(metadata_full[:10])
-    # test_analysis(data_full)
-
-
-    # percentage_of_clones_example()
-    # key = 'mislav/hub'
-    # similarities = common.s3_load_json(f"{key}/{common.SIMILARITIES}")
-    # metadata = common.s3_load_json(f"{key}/{common.METADATA}")
-    # utility_print(metadata)
-    # df = pd.DataFrame(similarities)
-    # print(df.head())
-    # sims = df['similarity']
-    # print(sims.describe())
-    #
-    # mean_similarity = df.groupby(['id1', 'id2'])['similarity'].mean()
-    # print(mean_similarity)
-    # print(clone_count(df))
+    quick_analysis()
