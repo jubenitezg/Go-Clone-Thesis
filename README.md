@@ -1,4 +1,4 @@
-# Code Duplicates Detection on Go Repositories
+# Detection of code clones in Go projects through the use of machine learning techniques: Analysis of open source repositories on GitHub
 
 Escuela Colombiana de Ingeniería Master Thesis on Computer Science - Bogotá, Colombia
 

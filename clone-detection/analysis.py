@@ -117,9 +117,9 @@ def topics_distribution():
 
 
 if __name__ == '__main__':
-    #topics_distribution()
-    metadata_full = common.s3_load_json(f'{common.METADATA}')
-    data_full = full(metadata_full[:10])
+    topics_distribution()
+    # metadata_full = common.s3_load_json(f'{common.METADATA}')
+    # data_full = full(metadata_full[:10])
     # test_analysis(data_full)
 
 
