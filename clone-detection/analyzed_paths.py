@@ -10,8 +10,8 @@ logging.basicConfig(level=logging.WARN)
 logger = logging.getLogger(__name__)
 
 
-def is_test(func_path):
-    if 'test' in func_path:
+def is_test_vendor(func_path):
+    if 'test' in func_path or 'vendor' in func_path:
         return True
     return False
 
@@ -29,7 +29,7 @@ def filter_functions_paths(func_paths, key, dupl=None):
     if dupl is None:
         logger.info(f"No dupl paths for {key}")
         dupl = []
-    no_tests = [func_path for func_path in func_paths if not is_test(func_path)]
+    no_tests = [func_path for func_path in func_paths if not is_test_vendor(func_path)]
     if len(dupl) == 0:
         return no_tests
     return [func for func in no_tests if is_on_dupl_path(func, dupl)]

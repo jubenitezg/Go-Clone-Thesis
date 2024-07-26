@@ -1,6 +1,15 @@
+from io import StringIO
+
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import matplotlib
 
 import common
+from sys import platform
+
+if platform == "linux" or platform == "linux2":
+    matplotlib.use('TkAgg')
 
 
 # Preguntas investigacion
@@ -11,9 +20,6 @@ import common
 
 
 def percentage_of_clones_example():
-    import matplotlib.pyplot as plt
-    import matplotlib
-    matplotlib.use('TkAgg')
     data = {
         'Group': ['topic_0', 'topic_1', 'topic_2', 'topic_3'],
         'Percentage_of_Clones': [23, 45, 67, 12]
@@ -84,24 +90,37 @@ def full(repositories):
     return final_data
 
 
-def test_analysis(df):
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-    import matplotlib
-    matplotlib.use('TkAgg')
+def check_analysis(df):
     correlation_matrix = df.corr(numeric_only=True)
     plt.figure(figsize=(10, 8))
     sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
     plt.show()
 
 
+def topics_distribution():
+    topics = common.s3_load_json(f"{common.DATA_TOPICS_NORM}")
+    df = pd.read_json(StringIO(topics))
+    topic_columns = [col for col in df.columns if 'topic' in col]
+    df['max_topic'] = df[topic_columns].idxmax(axis=1)
+    grouped_data = df.groupby('max_topic').size().reset_index(name='count')
+    grouped_data.set_index('max_topic', inplace=True)
+    print(grouped_data)
 
+    plt.figure(figsize=(10, 6))
+    ax = sns.barplot(x=grouped_data.index, y='count', data=grouped_data, color='skyblue')
+    ax.bar_label(ax.containers[0], label_type='edge', padding=3)
+    plt.title('Data Grouped by Max Topic')
+    plt.xlabel('Topic')
+    plt.ylabel('Count')
+    plt.xticks(rotation=45, ha='right')
+    plt.show()
 
 
 if __name__ == '__main__':
+    #topics_distribution()
     metadata_full = common.s3_load_json(f'{common.METADATA}')
-    data_full = full(metadata_full[:1000])
-    test_analysis(data_full)
+    data_full = full(metadata_full[:10])
+    # test_analysis(data_full)
 
 
     # percentage_of_clones_example()
