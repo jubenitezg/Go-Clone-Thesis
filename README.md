@@ -1,4 +1,4 @@
-# Detection of code clones in Go projects through the use of machine learning techniques: Analysis of open source repositories on GitHub
+# Code cloning in Go open source projects: A prevalence and structure analysis on GitHub
 
 Escuela Colombiana de Ingeniería Master Thesis on Computer Science - Bogotá, Colombia
 
