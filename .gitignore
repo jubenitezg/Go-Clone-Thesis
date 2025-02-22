@@ -172,3 +172,10 @@ full.csv
 tree-sitter-*/
 dataset/
 saved_models/
+
+
+repos_total_functions.json
+codes.json
+codes.txt
+
+
