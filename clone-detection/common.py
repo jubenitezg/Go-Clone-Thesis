@@ -8,6 +8,7 @@ logging.basicConfig(level=logging.WARN)
 logger = logging.getLogger(__name__)
 
 SIMILARITIES = 'similarities.json'
+SIMILARITIES_LOC = 'similarities-with-loc.json'
 METADATA = 'metadata.json'
 DATA = 'data.json'
 NORM_REPOSITORIES = 'normalized_repositories.json'
@@ -19,6 +20,7 @@ DATA_TOPICS_READABLE = 'data_topics_readable.json'
 BUCKET = os.environ.get('BUCKET')
 DUPL = 'dupl_files.json'
 FUNCTIONS = 'go-functions.json'
+FUNCTIONS_LOC = 'go-functions-with-loc.json'
 PATHS = 'go-paths.json'
 TOPICS = {
     "topic_0": "Command Line",
